@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Document Share</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0f11;
+    --surface: #16181c;
+    --surface2: #1e2127;
+    --border: #2a2d35;
+    --accent: #c8f135;
+    --accent2: #4af0b0;
+    --muted: #5a5f70;
+    --text: #e8eaf0;
+    --text2: #9098b0;
+    --danger: #ff5a6e;
+    --owner: #ffb547;
+    --edit: #4af0b0;
+    --view: #7c8bff;
+    --comment: #d07cf7;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .panel {
+    width: 100%;
+    max-width: 520px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 32px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(200,241,53,0.04);
+  }
+
+  .panel-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .doc-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, #1e2127, #2a2d35);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .doc-info { flex: 1; min-width: 0; }
+  .doc-title { font-size: 15px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.2px; }
+  .doc-meta { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
+  .doc-meta span { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); }
+  .dot { color: var(--border); }
+
+  .close-btn {
+    width: 28px; height: 28px;
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    color: var(--muted); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; flex-shrink: 0;
+  }
+  .close-btn:hover { border-color: var(--text2); color: var(--text); }
+
+  .panel-body { padding: 20px 24px; }
+
+  .section-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+  }
+
+  .link-row { display: flex; gap: 8px; margin-bottom: 20px; }
+
+  .link-input {
+    flex: 1;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 12px;
+    font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text2);
+    outline: none; transition: border-color 0.15s;
+  }
+  .link-input:focus { border-color: var(--accent); color: var(--text); }
+
+  .copy-btn {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 14px; color: var(--text);
+    font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .copy-btn.copied { border-color: var(--accent); color: var(--accent); background: rgba(200,241,53,0.06); }
+
+  .invite-row { display: flex; gap: 8px; margin-bottom: 20px; }
+
+  .invite-input {
+    flex: 1;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 12px;
+    font-family: 'Syne', sans-serif; font-size: 13px; color: var(--text);
+    outline: none; transition: border-color 0.15s;
+  }
+  .invite-input::placeholder { color: var(--muted); }
+  .invite-input:focus { border-color: var(--accent2); }
+
+  .role-select {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 28px 9px 10px;
+    font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600; color: var(--text);
+    outline: none; cursor: pointer; appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a5f70' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 8px center;
+    transition: border-color 0.15s;
+  }
+  .role-select:focus { border-color: var(--accent2); }
+
+  .invite-btn {
+    background: var(--accent); border: none; border-radius: 8px;
+    padding: 9px 16px; color: #0e0f11;
+    font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .invite-btn:hover { background: #d6ff3a; transform: translateY(-1px); }
+  .invite-btn:active { transform: translateY(0); }
+
+  .divider { height: 1px; background: var(--border); margin: 4px 0 20px; }
+
+  .people-list { display: flex; flex-direction: column; gap: 4px; }
+
+  .person-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 10px; border-radius: 10px;
+    transition: background 0.12s;
+    animation: slideIn 0.25s ease forwards;
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .person-row:hover { background: var(--surface2); }
+
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+    flex-shrink: 0; border: 2px solid var(--surface);
+  }
+
+  .person-info { flex: 1; min-width: 0; }
+  .person-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .person-email { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .role-badge {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.8px;
+    text-transform: uppercase; padding: 3px 8px; border-radius: 20px; flex-shrink: 0;
+  }
+  .role-owner   { color: var(--owner);   background: rgba(255,181,71,0.1);  border: 1px solid rgba(255,181,71,0.2); }
+  .role-editor  { color: var(--edit);    background: rgba(74,240,176,0.1);  border: 1px solid rgba(74,240,176,0.2); }
+  .role-viewer  { color: var(--view);    background: rgba(124,139,255,0.1); border: 1px solid rgba(124,139,255,0.2); }
+  .role-commenter { color: var(--comment); background: rgba(208,124,247,0.1); border: 1px solid rgba(208,124,247,0.2); }
+
+  .remove-btn {
+    width: 24px; height: 24px; background: none; border: none; border-radius: 6px;
+    color: var(--muted); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: all 0.12s; flex-shrink: 0;
+  }
+  .person-row:hover .remove-btn { opacity: 1; }
+  .remove-btn:hover { background: rgba(255,90,110,0.15); color: var(--danger); }
+
+  .panel-footer {
+    padding: 14px 24px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .access-toggle { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text2); cursor: pointer; }
+
+  .toggle {
+    width: 32px; height: 18px; background: var(--border); border-radius: 9px;
+    position: relative; transition: background 0.2s; flex-shrink: 0;
+  }
+  .toggle.on { background: var(--accent2); }
+  .toggle::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 14px; height: 14px; background: white; border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle.on::after { transform: translateX(14px); }
+
+  .notify-btn {
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 14px; color: var(--text2);
+    font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .notify-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--surface2); border: 1px solid var(--accent);
+    color: var(--accent); border-radius: 10px;
+    padding: 10px 18px; font-size: 13px; font-weight: 600;
+    font-family: 'Syne', sans-serif;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 999; pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <div class="panel-header">
+    <div class="doc-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9098b0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+        <polyline points="10 9 9 9 8 9"/>
+      </svg>
+    </div>
+    <div class="doc-info">
+      <div class="doc-title">Q3 Command Center Strategy.doc</div>
+      <div class="doc-meta">
+        <span>Last edited 2h ago</span>
+        <span class="dot">&middot;</span>
+        <span id="personCount">4 people</span>
+      </div>
+    </div>
+    <button class="close-btn" title="Close" onclick="showToast('Panel closed')">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <div class="panel-body">
+    <div class="section-label">Share Link</div>
+    <div class="link-row">
+      <input class="link-input" id="linkInput" value="cmd-center.app/doc/q3-strategy" readonly />
+      <button class="copy-btn" id="copyBtn" onclick="copyLink()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy
+      </button>
+    </div>
+
+    <div class="section-label">Invite People</div>
+    <div class="invite-row">
+      <input class="invite-input" id="emailInput" type="email" placeholder="email@example.com" />
+      <select class="role-select" id="roleSelect">
+        <option value="editor">Editor</option>
+        <option value="viewer">Viewer</option>
+        <option value="commenter">Commenter</option>
+      </select>
+      <button class="invite-btn" onclick="addPerson()">Invite</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section-label">People with Access</div>
+    <div class="people-list" id="peopleList"></div>
+  </div>
+
+  <div class="panel-footer">
+    <div class="access-toggle" onclick="togglePublic()">
+      <div class="toggle on" id="publicToggle"></div>
+      <span id="publicLabel">Anyone with link can view</span>
+    </div>
+    <button class="notify-btn" onclick="showToast('Notifications sent to all!')">Notify All</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const avatarColors = [
+    ['#c8f135','#0e1a00'],['#4af0b0','#002a1c'],['#7c8bff','#0a0d2a'],
+    ['#d07cf7','#1a0026'],['#ffb547','#2a1a00'],['#ff7eb6','#2a0015']
+  ];
+
+  let people = [
+    { id:1, name:'Alex Rivera',  email:'alex@cmd.io',    role:'owner' },
+    { id:2, name:'Sana Patel',   email:'sana@cmd.io',    role:'editor' },
+    { id:3, name:'Marcus Chen',  email:'marcus@cmd.io',  role:'viewer' },
+    { id:4, name:'Lena Kovacs',  email:'lena@studio.io', role:'commenter' },
+  ];
+  let nextId = 5;
+  let publicAccess = true;
+
+  function initials(name) { return name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase(); }
+  function roleClass(r) { return {owner:'role-owner',editor:'role-editor',viewer:'role-viewer',commenter:'role-commenter'}[r]; }
+
+  function render() {
+    const list = document.getElementById('peopleList');
+    list.innerHTML = '';
+    people.forEach((p,i) => {
+      const [bg,fg] = avatarColors[i % avatarColors.length];
+      const row = document.createElement('div');
+      row.className = 'person-row';
+      row.style.animationDelay = (i * 0.04) + 's';
+      row.innerHTML = `
+        <div class="avatar" style="background:${bg};color:${fg}">${initials(p.name)}</div>
+        <div class="person-info">
+          <div class="person-name">${p.name}</div>
+          <div class="person-email">${p.email}</div>
+        </div>
+        <span class="role-badge ${roleClass(p.role)}">${p.role}</span>
+        ${p.role !== 'owner'
+          ? `<button class="remove-btn" onclick="removePerson(${p.id})" title="Remove">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+             </button>`
+          : '<div style="width:24px"></div>'}
+      `;
+      list.appendChild(row);
+    });
+    document.getElementById('personCount').textContent = people.length + ' people';
+  }
+
+  function addPerson() {
+    const email = document.getElementById('emailInput').value.trim();
+    const role  = document.getElementById('roleSelect').value;
+    if (!email || !email.includes('@')) { showToast('Enter a valid email'); return; }
+    if (people.find(p => p.email === email)) { showToast('Already added'); return; }
+    const name = email.split('@')[0].replace(/[._]/g,' ').replace(/\b\w/g, c=>c.toUpperCase());
+    people.push({ id:nextId++, name, email, role });
+    document.getElementById('emailInput').value = '';
+    render();
+    showToast('Invited ' + name + ' as ' + role);
+  }
+
+  function removePerson(id) {
+    const p = people.find(p=>p.id===id);
+    people = people.filter(p=>p.id!==id);
+    render();
+    if (p) showToast('Removed ' + p.name);
+  }
+
+  function copyLink() {
+    const btn = document.getElementById('copyBtn');
+    btn.innerHTML = '&#10003; Copied';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy`;
+      btn.classList.remove('copied');
+    }, 2000);
+    showToast('Link copied to clipboard');
+  }
+
+  function togglePublic() {
+    publicAccess = !publicAccess;
+    document.getElementById('publicToggle').classList.toggle('on', publicAccess);
+    document.getElementById('publicLabel').textContent = publicAccess
+      ? 'Anyone with link can view'
+      : 'Restricted — invite only';
+    showToast(publicAccess ? 'Link sharing enabled' : 'Link sharing disabled');
+  }
+
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  document.getElementById('emailInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addPerson();
+  });
+
+  render();
+</script>
+</body>
+</html>
